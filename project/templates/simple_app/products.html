@@ -1,0 +1,83 @@
+<!--  наследуемся от шаблона default.html, который мы создавали для flatpages -->
+{% extends 'simple_app/default.html' %}
+
+{% load custom_filters %}
+{% load custom_tags %}
+
+{% block title %}
+Products
+{% endblock title %}
+
+{% block content %}
+<h1>Все товары</h1>
+
+<!-- Значение берется из функции, зарегистрированной в custom_tags.py -->
+<h3>{% current_time 'hms' %}</h3>
+
+<!-- Если в переменной next_sale будет None,
+то выведется указанный в фильтре текст -->
+<h3> {{ next_sale|default_if_none:"Чуть позже сообщим о распродаже!" }} </h3>
+<br>
+
+{# Добавляем форму, которая объединяет набор полей, которые будут отправляться в запросе #}
+    <form action="" method="get">
+        {# Переменная, которую мы передали через контекст, может сгенерировать нам форму с полями #}
+        {{ filterset.form.as_p }}
+        {# Добавим кнопку отправки данных формы #}
+        <input type="submit" value="Найти" />
+    </form>
+
+{% if products %}
+
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">Название</th>
+        <th scope="col">Описание</th>
+        <th scope="col">Категория</th>
+        <th scope="col">Цена</th>
+        <th scope="col">Количество</th>
+        <th scope="col">Редактировать</th>
+        <th scope="col">Удалить</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for product in products %}
+    <tr>
+        <td>{{ product.name }}</td>
+        <td>{{ product.description|truncatewords:2 }}</td>
+        <td>{{ product.category.name }}</td>
+        <td>{{ product.price|currency:'usd' }}</td>
+        <td>{{ product.quantity }}</td>
+        <td><a class="nav-link" href="{{product.id}}/update/">Редактировать</a></td>
+        <td><a class="nav-link" href="{{product.id}}/delete/">Удалить</a></td>
+    </tr>
+    {% endfor %}
+
+</table>
+{% else %}
+<h2>Товаров нет!</h2>
+{% endif %}
+
+{# Добавляем пагинацию на страницу #}
+
+   {% if page_obj.has_previous %}
+       {# Для каждой ссылки пагинации указываем обработку через новый тег #}
+       <a href="?{% url_replace page=1 %}">1</a>
+       {% if page_obj.previous_page_number != 1 %}
+           ...
+           <a href="?{% url_replace page=page_obj.previous_page_number %}">{{ page_obj.previous_page_number }}</a>
+       {% endif %}
+   {% endif %}
+
+   {{ page_obj.number }}
+
+   {% if page_obj.has_next %}
+       <a href="?{% url_replace page=page_obj.next_page_number %}">{{ page_obj.next_page_number }}</a>
+       {% if paginator.num_pages != page_obj.next_page_number %}
+           ...
+           <a href="?{% url_replace page=page_obj.paginator.num_pages %}">{{ page_obj.paginator.num_pages }}</a>
+       {% endif %}
+   {% endif %}
+
+{% endblock content %}
